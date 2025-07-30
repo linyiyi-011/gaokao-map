@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高校录取地图</title>
+    <script src="echarts.min.js"></script>
+    <script src="china.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+         :root {
+            --primary: #ff7bac;
+            --secondary: #5d9bff;
+            --accent: #ffcc66;
+            --bg: #f9f4f8;
+            --card-bg: #ffffff;
+            --text: #333344;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --anime-pink: #ff9dcf;
+            --anime-blue: #8cc8ff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at 10% 20%, rgba(255, 200, 124, 0.1) 0%, rgba(255, 123, 172, 0.05) 90%), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="20" cy="20" r="3" fill="%23ff7bac" opacity="0.2"/><circle cx="50" cy="80" r="2" fill="%235d9bff" opacity="0.2"/><circle cx="70" cy="30" r="4" fill="%23ffcc66" opacity="0.2"/></svg>');
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        .anime-corner {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            z-index: -1;
+            opacity: 0.1;
+        }
+        
+        .corner-1 {
+            top: 0;
+            right: 0;
+            background: radial-gradient(circle, var(--anime-pink) 0%, transparent 70%);
+        }
+        
+        .corner-2 {
+            bottom: 0;
+            left: 0;
+            background: radial-gradient(circle, var(--anime-blue) 0%, transparent 70%);
+        }
+        
+        .anime-character {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 120px;
+            height: 120px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="30" r="20" fill="%23ffe0f0"/><path d="M30,70 Q50,90 70,70 L50,100 Z" fill="%235d9bff"/><circle cx="40" cy="25" r="3" fill="%23333"/><circle cx="60" cy="25" r="3" fill="%23333"/></svg>');
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0.1;
+            z-index: -1;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .title {
+            font-size: 2.5rem;
+            color: var(--primary);
+            text-shadow: 2px 2px 4px var(--shadow);
+            margin-bottom: 10px;
+            position: relative;
+            display: inline-block;
+            background: linear-gradient(45deg, #ff7bac, #5d9bff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .title::after {
+            content: "✧･ﾟ: *✧･ﾟ:*";
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--accent);
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+        
+        .subtitle {
+            color: var(--secondary);
+            font-size: 1.2rem;
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.7);
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            position: relative;
+        }
+        
+        .tabs::before {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 3px;
+            background: linear-gradient(to right, transparent, var(--primary), transparent);
+            border-radius: 3px;
+        }
+        
+        .tab {
+            padding: 12px 30px;
+            margin: 0 10px;
+            background: var(--card-bg);
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 10px var(--shadow);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .tab::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tab:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px var(--shadow);
+        }
+        
+        .tab:hover::after {
+            opacity: 0.1;
+        }
+        
+        .tab.active {
+            color: white;
+        }
+        
+        .tab.active::after {
+            opacity: 1;
+        }
+        
+        .view {
+            display: none;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 25px var(--shadow);
+            min-height: 500px;
+            position: relative;
+            border: 1px solid rgba(255, 123, 172, 0.2);
+        }
+        
+        .view.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        /* 导航路径 */
+        
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: var(--secondary);
+            font-weight: 500;
+        }
+        
+        .breadcrumb-item:hover {
+            color: var(--primary);
+        }
+        
+        .breadcrumb-divider {
+            margin: 0 10px;
+            color: #aaa;
+        }
+        /* 同学列表样式 */
+        
+        .search-container {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 14px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            padding-left: 50px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+            background: rgba(255, 255, 255, 0.8);
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 3px 15px rgba(255, 123, 172, 0.2);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+            font-size: 1.2rem;
+        }
+        
+        .search-hint {
+            margin-top: 10px;
+            padding: 5px 15px;
+            background: rgba(93, 155, 255, 0.1);
+            border-radius: 10px;
+            display: inline-block;
+            font-size: 0.9rem;
+            color: var(--secondary);
+        }
+        
+        .student-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .student-card {
+            background: linear-gradient(135deg, #ffffff, #f9f0ff);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 123, 172, 0.2);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .student-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(255, 123, 172, 0.2);
+            border-color: var(--primary);
+        }
+        
+        .student-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+        }
+        
+        .student-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .student-name::before {
+            content: "🎓";
+            margin-right: 8px;
+        }
+        
+        .student-school {
+            color: var(--secondary);
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .student-school::before {
+            content: "🏫";
+            margin-right: 8px;
+        }
+        
+        .student-major {
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .student-major::before {
+            content: "📚";
+            margin-right: 8px;
+        }
+        
+        .student-location {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #888;
+            font-size: 0.9rem;
+        }
+        /* 地图容器样式 */
+        
+        #map-container {
+            width: 100%;
+            height: 600px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            background: white;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 0 10px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        /* 学校详情样式 */
+        
+        .school-detail {
+            padding: 20px;
+        }
+        
+        .school-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px dashed rgba(255, 123, 172, 0.3);
+        }
+        
+        .school-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .school-name {
+            font-size: 2rem;
+            color: var(--secondary);
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .school-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .info-card {
+            background: #f8f9ff;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(93, 155, 255, 0.2);
+            transition: all 0.3s;
+        }
+        
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(93, 155, 255, 0.15);
+        }
+        
+        .info-card h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 123, 172, 0.2);
+        }
+        
+        .info-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .info-card li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .info-card li:last-child {
+            border-bottom: none;
+        }
+        
+        .website-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--secondary), #3a7cff);
+            color: white;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 10px;
+            box-shadow: 0 4px 10px rgba(93, 155, 255, 0.3);
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .website-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(93, 155, 255, 0.4);
+        }
+        /* 结果统计 */
+        
+        .result-count {
+            margin: 15px 0;
+            padding: 8px 15px;
+            background: rgba(255, 123, 172, 0.1);
+            border-radius: 10px;
+            display: inline-block;
+            color: var(--primary);
+            font-weight: 500;
+        }
+        /* 移动端优化 */
+        
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+            .tab {
+                padding: 10px 20px;
+                margin: 5px;
+                font-size: 0.9rem;
+            }
+            #map-container {
+                height: 400px;
+            }
+            .student-list {
+                grid-template-columns: 1fr;
+            }
+            .school-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .anime-character {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .title {
+                font-size: 1.8rem;
+            }
+            .view {
+                padding: 15px;
+            }
+            .tab {
+                padding: 8px 15px;
+                font-size: 0.85rem;
+            }
+            #map-container {
+                height: 300px;
+            }
+        }
+        /* 动画效果 */
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 123, 172, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 12px rgba(255, 123, 172, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 123, 172, 0);
+            }
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            background: var(--card-bg);
+            border-radius: 50px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 8px var(--shadow);
+            border: 1px solid rgba(93, 155, 255, 0.2);
+            color: var(--text);
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: #f5f5f5;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px var(--shadow);
+        }
+        
+        .student-count {
+            display: inline-block;
+            background: var(--accent);
+            color: #333;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+        /* 加载动画 */
+        
+        .loader {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 123, 172, 0.2);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="anime-corner corner-1"></div>
+    <div class="anime-corner corner-2"></div>
+    <div class="anime-character"></div>
+
+    <div class="container">
+        <header>
+            <h1 class="title"><i class="fas fa-graduation-cap"></i> 高校录取地图</h1>
+            <p class="subtitle">长风破浪会有时，直挂云帆济沧海。</p>
+        </header>
+
+        <div class="tabs">
+            <div class="tab active" data-view="student-list">
+                <i class="fas fa-users"></i> 同学列表
+            </div>
+            <div class="tab" data-view="china-map">
+                <i class="fas fa-map"></i> 中国地图
+            </div>
+            <div class="tab" data-view="school-detail" style="display:none" id="school-detail-tab">
+                <i class="fas fa-school"></i> 学校详情
+            </div>
+        </div>
+
+        <!-- 导航路径 -->
+        <div class="breadcrumb" id="breadcrumb">
+            <div class="breadcrumb-item" data-target="student-list">首页</div>
+        </div>
+
+        <div id="student-list" class="view active">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-box" id="search-input" placeholder="搜索同学姓名、学校或专业...">
+                <div class="search-hint">支持拼音首字母搜索，如 "zs" 可找到 "张书晨"</div>
+            </div>
+
+            <div class="result-count" id="result-count">共找到 50 位同学</div>
+
+            <div class="student-list" id="student-list-container">
+                <!-- 学生列表将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <div id="china-map" class="view">
+            <button class="back-btn" id="back-to-main">
+                <i class="fas fa-arrow-left"></i> 返回列表
+            </button>
+            <div id="map-container"></div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #e6f7ff"></div>
+                    <span>1-2人</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #bae7ff"></div>
+                    <span>3-4人</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #91d5ff"></div>
+                    <span>5-6人</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #69c0ff"></div>
+                    <span>7-8人</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #40a9ff"></div>
+                    <span>9人以上</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="school-detail" class="view">
+            <button class="back-btn" id="back-to-map">
+                <i class="fas fa-arrow-left"></i> 返回地图
+            </button>
+            <div class="school-detail" id="school-detail-container">
+                <!-- 学校详情将通过JS动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 示例数据
+        const students = [{
+            name: "张书晨",
+            school: "北京航空航天大学",
+            major: "工科实验班（航空航天)",
+            location: "北京"
+        }, {
+            name: "陈雨璇",
+            school: "西安电子科技大学",
+            major: "电子信息类（集成电路）",
+            location: "陕西"
+        }, {
+            name: "刘瑞欣",
+            school: "首都医科大学",
+            major: "儿科学（5+3一体化)",
+            location: "北京"
+        }, {
+            name: "储远航",
+            school: "吉林大学",
+            major: "网络空间安全",
+            location: "吉林"
+        }, {
+            name: "王博强",
+            school: "南京航空航天大学",
+            major: "软件工程",
+            location: "江苏"
+        }, {
+            name: "顾钊",
+            school: "南京理工大学",
+            major: "工业设计",
+            location: "江苏"
+        }, {
+            name: "徐明睿",
+            school: "中国海洋大学",
+            major: "海洋技术",
+            location: "山东"
+        }, {
+            name: "王怡",
+            school: "海军军医大学",
+            major: "临床医学",
+            location: "上海"
+        }, {
+            name: "丁森",
+            school: "江南大学",
+            major: "食品质量与安全",
+            location: "江苏"
+        }, {
+            name: "张鹏宇",
+            school: "华北电力大学（保定校区）",
+            major: "环境工程",
+            location: "河北"
+        }, {
+            name: "李晓梵",
+            school: "安徽大学",
+            major: "电子信息工程",
+            location: "安徽"
+        }, {
+            name: "蒋以凡",
+            school: "南京邮电大学",
+            major: "数字媒体技术",
+            location: "江苏"
+        }, {
+            name: "程俊",
+            school: "合肥工业大学（宣城校区）",
+            major: "新能源材料与器件",
+            location: "安徽"
+        }, {
+            name: "杨殷杰",
+            school: "安徽公安学院",
+            major: "网络安全与执法",
+            location: "安徽"
+        }, {
+            name: "万志翔",
+            school: "郑州大学",
+            major: "电子信息类",
+            location: "河南"
+        }, {
+            name: "陈子鸣",
+            school: "安徽大学",
+            major: "通信工程",
+            location: "安徽"
+        }, {
+            name: "倪浩然",
+            school: "合肥工业大学",
+            major: "制药工程",
+            location: "安徽"
+        }, {
+            name: "黄程翔",
+            school: "深圳大学",
+            major: "化学（卓越班）",
+            location: "广东"
+        }, {
+            name: "袁丁勇明",
+            school: "安徽大学",
+            major: "机器人工程",
+            location: "安徽"
+        }, {
+            name: "陈强顺",
+            school: "安徽大学",
+            major: "物联网工程",
+            location: "安徽"
+        }, {
+            name: "董安平",
+            school: "中国石油大学（北京）",
+            major: "工商管理",
+            location: "北京"
+        }, {
+            name: "何振涛",
+            school: "安徽大学",
+            major: "生物工程",
+            location: "安徽"
+        }, {
+            name: "张学茹",
+            school: "安徽大学",
+            major: "统计学",
+            location: "安徽"
+        }, {
+            name: "胡志强",
+            school: "合肥工业大学（宣城校区）",
+            major: "物流管理",
+            location: "安徽"
+        }, {
+            name: "殷皓哲",
+            school: "北京信息科技大学",
+            major: "计算机类（勤信实验班）",
+            location: "北京"
+        }, {
+            name: "张羽",
+            school: "安徽大学",
+            major: "生物工程",
+            location: "安徽"
+        }, {
+            name: "冯陈莹",
+            school: "安徽大学",
+            major: "高分子材料与工程",
+            location: "安徽"
+        }, {
+            name: "刘晓畅",
+            school: "太原理工大学",
+            major: "车辆工程",
+            location: "山西"
+        }, {
+            name: "李诗琪",
+            school: "安徽大学",
+            major: "信息管理与信息系统",
+            location: "安徽"
+        }, {
+            name: "汪博",
+            school: "安徽大学",
+            major: "英语",
+            location: "安徽"
+        }, {
+            name: "蒋均浩",
+            school: "成都理工大学",
+            major: "网络空间安全",
+            location: "四川"
+        }, {
+            name: "王蔚然",
+            school: "安徽大学",
+            major: "信息管理与信息系统",
+            location: "安徽"
+        }, {
+            name: "孔逸枫",
+            school: "宁夏大学",
+            major: "化学工程与工艺",
+            location: "宁夏"
+        }, {
+            name: "张凯",
+            school: "青海大学",
+            major: "计算机科学与技术",
+            location: "青海"
+        }, {
+            name: "余晓",
+            school: "海南大学",
+            major: "有转专业倾向",
+            location: "海南"
+        }, {
+            name: "徐子杨",
+            school: "成都中医药大学",
+            major: "临床医学",
+            location: "四川"
+        }, {
+            name: "夏凯",
+            school: "石河子大学",
+            major: "机械设计制造及自动化",
+            location: "新疆"
+        }, {
+            name: "方欣怡",
+            school: "宁夏大学",
+            major: "过程装备与控制工程",
+            location: "宁夏"
+        }, {
+            name: "陈永康",
+            school: "石河子大学",
+            major: "信息与计算科学",
+            location: "新疆"
+        }, {
+            name: "孙奕铭",
+            school: "安徽理工大学",
+            major: "计算机科学与技术",
+            location: "安徽"
+        }, {
+            name: "解亚瑞",
+            school: "天津医科大学",
+            major: "医学检验",
+            location: "天津"
+        }, {
+            name: "钟可欣",
+            school: "安徽理工大学",
+            major: "智能科学与技术",
+            location: "安徽"
+        }, {
+            name: "徐新宇",
+            school: "成都理工大学",
+            major: "资源勘查工程（能源学院）",
+            location: "四川"
+        }, {
+            name: "李乐乐",
+            school: "华东交通大学",
+            major: "物联网工程",
+            location: "江西"
+        }, {
+            name: "何馨语",
+            school: "安徽师范大学",
+            major: "食品科学与工程",
+            location: "安徽"
+        }, {
+            name: "夏冰",
+            school: "安徽医科大学",
+            major: "药学",
+            location: "安徽"
+        }, {
+            name: "程智祥",
+            school: "安徽工业大学",
+            major: "微电子科学与工程",
+            location: "安徽"
+        }, {
+            name: "胡李梦瑶",
+            school: "湖北师范大学",
+            major: "数学与应用数学（师范）",
+            location: "湖北"
+        }, {
+            name: "王静",
+            school: "安庆师范大学",
+            major: "自动化",
+            location: "安徽"
+        }, {
+            name: "李梦雅",
+            school: "铜陵学院",
+            major: "计算机科学与技术",
+            location: "安徽"
+        }];
+
+        // 学校详情数据
+        const schoolDetails = {
+            "北京航空航天大学": {
+                established: 1952,
+                features: ["航空航天", "计算机科学与技术", "材料科学与工程"],
+                campus: "北京市海淀区学院路37号",
+                website: "https://www.buaa.edu.cn/",
+                description: "北京航空航天大学是新中国第一所航空航天高等学府，是国家'211工程'、'985工程'重点建设高校，2017年入选国家'双一流'建设高校名单。"
+            },
+            "西安电子科技大学": {
+                established: 1931,
+                features: ["电子信息", "通信工程", "计算机科学与技术"],
+                campus: "陕西省西安市雁塔区太白南路2号",
+                website: "https://www.xidian.edu.cn/",
+                description: "西安电子科技大学是以信息与电子学科为主，工、理、管、文多学科协调发展的全国重点大学，是国家'双一流'建设高校。"
+            },
+            "安徽大学": {
+                established: 1928,
+                features: ["计算机科学与技术", "电子信息工程", "材料科学与工程"],
+                campus: "安徽省合肥市蜀山区九龙路111号",
+                website: "https://www.ahu.edu.cn/",
+                description: "安徽大学是国家'双一流'建设高校，安徽省人民政府与教育部共建高校，安徽省属重点综合性大学。"
+            },
+            "南京航空航天大学": {
+                established: 1952,
+                features: ["航空航天工程", "机械工程", "自动化"],
+                campus: "江苏省南京市秦淮区御道街29号",
+                website: "https://www.nuaa.edu.cn/",
+                description: "南京航空航天大学是国家'双一流'建设高校，工信部、教育部、江苏省共建高校，以航空航天为特色的全国重点大学。"
+            },
+            "合肥工业大学": {
+                established: 1945,
+                features: ["车辆工程", "机械设计制造及其自动化", "电气工程及其自动化"],
+                campus: "安徽省合肥市包河区屯溪路193号",
+                website: "https://www.hfut.edu.cn/",
+                description: "合肥工业大学是国家'双一流'建设高校，教育部直属全国重点大学，在汽车、机械等领域具有突出优势。"
+            },
+            "首都医科大学": {
+                established: 1960,
+                features: ["临床医学", "儿科学", "口腔医学"],
+                campus: "北京市丰台区右安门外西头条10号",
+                website: "https://www.ccmu.edu.cn/",
+                description: "首都医科大学是北京市重点高等院校，以医学学科为基础的综合性医科大学，在医学教育和研究方面具有显著优势。"
+            },
+            "西安电子科技大学": {
+                established: 1931,
+                features: ["电子信息", "通信工程", "计算机科学与技术"],
+                campus: "陕西省西安市雁塔区太白南路2号",
+                website: "https://www.xidian.edu.cn/",
+                description: "西安电子科技大学是以信息与电子学科为主，工、理、管、文多学科协调发展的全国重点大学，是国家'双一流'建设高校。"
+            },
+            "南京理工大学": {
+                established: 1953,
+                features: ["兵器科学与技术", "电子科学与技术", "机械工程"],
+                campus: "江苏省南京市孝陵卫200号",
+                website: "https://www.njust.edu.cn/",
+                description: "南京理工大学是国家“211工程”重点支持的高校，工信部与江苏省共建高校，以兵器科学与技术为特色。"
+            },
+            "中国海洋大学": {
+                established: 1924,
+                features: ["海洋科学", "水产", "环境科学"],
+                campus: "山东省青岛市崂山区松岭路238号",
+                website: "https://www.ouc.edu.cn/",
+                description: "中国海洋大学是教育部直属全国重点大学，国家“985工程”和“211工程”重点建设高校，以海洋和水产为特色。"
+            },
+            "海军军医大学": {
+                established: 1949,
+                features: ["临床医学", "口腔医学", "护理学"],
+                campus: "上海市长海路800号",
+                website: "https://www.navy-medical.edu.cn/",
+                description: "海军军医大学是中国人民解放军直属的高等医学院校，医学教育和研究实力雄厚。"
+            },
+            "江南大学": {
+                established: 1958,
+                features: ["食品科学与工程", "生物工程", "轻工技术与工程"],
+                campus: "江苏省无锡市蠡湖大道1800号",
+                website: "https://www.jiangnan.edu.cn/",
+                description: "江南大学是教育部直属重点高校，国家“211工程”重点支持高校，以食品科学与工程为特色。"
+            },
+            "华北电力大学（保定校区）": {
+                established: 1958,
+                features: ["电气工程及其自动化", "能源与动力工程", "自动化"],
+                campus: "河北省保定市永华北大街619号",
+                website: "https://www.ncepu.edu.cn/",
+                description: "华北电力大学是教育部直属全国重点大学，电力及能源领域特色鲜明。"
+            },
+            "南京邮电大学": {
+                established: 1942,
+                features: ["信息与通信工程", "电子科学与技术", "计算机科学与技术"],
+                campus: "江苏省南京市文苑路9号",
+                website: "https://www.njupt.edu.cn/",
+                description: "南京邮电大学是江苏省重点支持高校，以信息与通信工程为特色。"
+            },
+            "合肥工业大学（宣城校区）": {
+                established: 1945,
+                features: ["机械工程", "土木工程", "管理科学与工程"],
+                campus: "安徽省宣城市薰化路300号",
+                website: "https://xc.hfut.edu.cn/",
+                description: "合肥工业大学宣城校区是合肥工业大学的重要组成部分，工科优势突出。"
+            },
+            "安徽公安学院": {
+                established: 1949,
+                features: ["公安学", "网络安全与执法", "侦查学"],
+                campus: "安徽省合肥市蜀山区科学岛路78号",
+                website: "https://www.ahgaxy.com/",
+                description: "安徽公安学院是安徽省唯一的公安本科院校，培养公安专业人才。"
+            },
+            "郑州大学": {
+                established: 1956,
+                features: ["临床医学", "材料科学与工程", "电子信息类"],
+                campus: "河南省郑州市科学大道100号",
+                website: "https://www.zzu.edu.cn/",
+                description: "郑州大学是国家“211工程”重点支持高校，河南省重点综合性大学。"
+            },
+            "深圳大学": {
+                established: 1983,
+                features: ["化学", "计算机科学与技术", "管理学"],
+                campus: "广东省深圳市南山区南海大道3688号",
+                website: "https://www.szu.edu.cn/",
+                description: "深圳大学是广东省重点支持高校，学科门类齐全，创新氛围浓厚。"
+            },
+            "中国石油大学（北京）": {
+                established: 1953,
+                features: ["石油工程", "地质资源与地质工程", "工商管理"],
+                campus: "北京市昌平区府学路18号",
+                website: "https://www.cup.edu.cn/",
+                description: "中国石油大学（北京）是教育部直属全国重点大学，石油石化领域特色鲜明。"
+            },
+            "北京信息科技大学": {
+                established: 1937,
+                features: ["计算机科学与技术", "信息管理与信息系统", "勤信实验班"],
+                campus: "北京市海淀区清河小营东路12号",
+                website: "https://www.bistu.edu.cn/",
+                description: "北京信息科技大学是北京市重点支持高校，信息技术与管理学科优势明显。"
+            },
+            "太原理工大学": {
+                established: 1902,
+                features: ["车辆工程", "机械工程", "材料科学与工程"],
+                campus: "山西省太原市迎泽西大街79号",
+                website: "https://www.tyut.edu.cn/",
+                description: "太原理工大学是山西省重点支持高校，工科实力雄厚。"
+            },
+            "成都理工大学": {
+                established: 1956,
+                features: ["地质资源与地质工程", "资源勘查工程", "网络空间安全"],
+                campus: "四川省成都市成华区二仙桥东三路1号",
+                website: "https://www.cdut.edu.cn/",
+                description: "成都理工大学是四川省重点支持高校，地质与资源类学科特色鲜明。"
+            },
+            "宁夏大学": {
+                established: 1958,
+                features: ["化学工程与工艺", "过程装备与控制工程", "农学"],
+                campus: "宁夏回族自治区银川市西夏区贺兰山西路489号",
+                website: "https://www.nxu.edu.cn/",
+                description: "宁夏大学是宁夏回族自治区重点支持高校，学科门类齐全。"
+            },
+            "青海大学": {
+                established: 1958,
+                features: ["计算机科学与技术", "农学", "水利工程"],
+                campus: "青海省西宁市城北区宁大路251号",
+                website: "https://www.qhu.edu.cn/",
+                description: "青海大学是青海省重点支持高校，综合性大学，工、理、农、医等多学科协调发展。"
+            },
+            "海南大学": {
+                established: 1958,
+                features: ["农学", "经济学", "有转专业倾向"],
+                campus: "海南省海口市人民大道58号",
+                website: "https://www.hainanu.edu.cn/",
+                description: "海南大学是海南省重点支持高校，国家“211工程”重点支持高校。"
+            },
+            "成都中医药大学": {
+                established: 1956,
+                features: ["临床医学", "中医学", "药学"],
+                campus: "四川省成都市温江区柳台大道1166号",
+                website: "https://www.cdutcm.edu.cn/",
+                description: "成都中医药大学是四川省重点支持高校，中医药学科特色鲜明。"
+            },
+            "石河子大学": {
+                established: 1949,
+                features: ["机械设计制造及自动化", "信息与计算科学", "农学"],
+                campus: "新疆维吾尔自治区石河子市北四路221号",
+                website: "https://www.shzu.edu.cn/",
+                description: "石河子大学是新疆维吾尔自治区重点支持高校，工、农、理、医等多学科协调发展。"
+            },
+            "安徽理工大学": {
+                established: 1945,
+                features: ["计算机科学与技术", "智能科学与技术", "矿业工程"],
+                campus: "安徽省淮南市泰丰大街168号",
+                website: "https://www.aust.edu.cn/",
+                description: "安徽理工大学是安徽省重点支持高校，工科优势明显。"
+            },
+            "天津医科大学": {
+                established: 1951,
+                features: ["医学检验", "临床医学", "口腔医学"],
+                campus: "天津市和平区气象台路22号",
+                website: "https://www.tmu.edu.cn/",
+                description: "天津医科大学是天津市重点支持高校，医学学科实力雄厚。"
+            },
+            "华东交通大学": {
+                established: 1971,
+                features: ["物联网工程", "交通运输", "土木工程"],
+                campus: "江西省南昌市经济技术开发区双港东大街808号",
+                website: "https://www.ecjtu.edu.cn/",
+                description: "华东交通大学是江西省重点支持高校，交通运输与工程类学科特色鲜明。"
+            },
+            "安徽师范大学": {
+                established: 1928,
+                features: ["食品科学与工程", "教育学", "文学"],
+                campus: "安徽省芜湖市北京东路1号",
+                website: "https://www.ahnu.edu.cn/",
+                description: "安徽师范大学是安徽省重点支持高校，师范类学科优势明显。"
+            },
+            "安徽医科大学": {
+                established: 1926,
+                features: ["药学", "临床医学", "护理学"],
+                campus: "安徽省合肥市梅山路81号",
+                website: "https://www.ahmu.edu.cn/",
+                description: "安徽医科大学是安徽省重点支持高校，医学学科实力雄厚。"
+            },
+            "安徽工业大学": {
+                established: 1958,
+                features: ["微电子科学与工程", "材料科学与工程", "机械工程"],
+                campus: "安徽省马鞍山市湖东中路59号",
+                website: "https://www.ahut.edu.cn/",
+                description: "安徽工业大学是安徽省重点支持高校，工科优势明显。"
+            },
+            "湖北师范大学": {
+                established: 1973,
+                features: ["数学与应用数学（师范）", "教育学", "文学"],
+                campus: "湖北省黄石市磁湖路11号",
+                website: "https://www.hbnu.edu.cn/",
+                description: "湖北师范大学是湖北省重点支持高校，师范类学科优势明显。"
+            },
+            "安庆师范大学": {
+                established: 1897,
+                features: ["自动化", "教育学", "文学"],
+                campus: "安徽省安庆市菱湖南路128号",
+                website: "https://www.aqnu.edu.cn/",
+                description: "安庆师范大学是安徽省重点支持高校，师范类学科优势明显。"
+            },
+            "铜陵学院": {
+                established: 1978,
+                features: ["计算机科学与技术", "经济学", "管理学"],
+                campus: "安徽省铜陵市翠湖四路1335号",
+                website: "https://www.tlu.edu.cn/",
+                description: "铜陵学院是安徽省重点支持高校，工、管、经等多学科协调发展。"
+            },
+            // 默认学校信息
+            "default": {
+                established: 1950,
+                features: ["计算机科学与技术", "电子信息工程", "机械工程"],
+                campus: "中国",
+                website: "#",
+                description: "一所优秀的中国高等学府，培养了大批优秀人才。"
+            }
+        };
+
+        // 按姓名拼音首字母排序
+        students.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+
+        // 拼音转换函数（简化版）
+        function getPinyinInitials(name) {
+            const pinyinMap = {
+                '张': 'Z',
+                '书': 'S',
+                '晨': 'C',
+                '陈': 'C',
+                '雨': 'Y',
+                '璇': 'X',
+                '刘': 'L',
+                '瑞': 'R',
+                '欣': 'X',
+                '储': 'C',
+                '远': 'Y',
+                '航': 'H',
+                '王': 'W',
+                '博': 'B',
+                '强': 'Q',
+                '顾': 'G',
+                '钊': 'Z',
+                '徐': 'X',
+                '明': 'M',
+                '睿': 'R',
+                '怡': 'Y',
+                '丁': 'D',
+                '森': 'S',
+                '鹏': 'P',
+                '宇': 'Y',
+                '李': 'L',
+                '晓': 'X',
+                '梵': 'F',
+                '蒋': 'J',
+                '以': 'Y',
+                '凡': 'F',
+                '程': 'C',
+                '俊': 'J',
+                '杨': 'Y',
+                '殷': 'Y',
+                '杰': 'J',
+                '万': 'W',
+                '志': 'Z',
+                '翔': 'X',
+                '子': 'Z',
+                '鸣': 'M',
+                '倪': 'N',
+                '浩': 'H',
+                '然': 'R',
+                '黄': 'H',
+                '程': 'C',
+                '翔': 'X',
+                '袁': 'Y',
+                '丁': 'D',
+                '勇': 'Y',
+                '明': 'M',
+                '顺': 'S',
+                '董': 'D',
+                '安': 'A',
+                '平': 'P',
+                '何': 'H',
+                '振': 'Z',
+                '涛': 'T',
+                '学': 'X',
+                '茹': 'R',
+                '胡': 'H',
+                '志': 'Z',
+                '强': 'Q',
+                '殷': 'Y',
+                '皓': 'H',
+                '哲': 'Z',
+                '羽': 'Y',
+                '冯': 'F',
+                '莹': 'Y',
+                '畅': 'C',
+                '诗': 'S',
+                '琪': 'Q',
+                '汪': 'W',
+                '均': 'J',
+                '浩': 'H',
+                '蔚': 'W',
+                '然': 'R',
+                '孔': 'K',
+                '逸': 'Y',
+                '枫': 'F',
+                '凯': 'K',
+                '余': 'Y',
+                '子': 'Z',
+                '杨': 'Y',
+                '夏': 'X',
+                '方': 'F',
+                '欣': 'X',
+                '怡': 'Y',
+                '永': 'Y',
+                '康': 'K',
+                '孙': 'S',
+                '奕': 'Y',
+                '铭': 'M',
+                '解': 'J',
+                '亚': 'Y',
+                '瑞': 'R',
+                '钟': 'Z',
+                '可': 'K',
+                '欣': 'X',
+                '新': 'X',
+                '宇': 'Y',
+                '乐': 'L',
+                '馨': 'X',
+                '语': 'Y',
+                '冰': 'B',
+                '智': 'Z',
+                '祥': 'X',
+                '梦': 'M',
+                '瑶': 'Y',
+                '静': 'J',
+                '雅': 'Y'
+            };
+
+            let initials = '';
+            for (let char of name) {
+                if (pinyinMap[char]) {
+                    initials += pinyinMap[char];
+                } else {
+                    initials += char;
+                }
+            }
+            return initials;
+        }
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 渲染学生列表
+            renderStudentList(students);
+
+            // 初始化地图
+            initChinaMap();
+
+            // 绑定搜索事件
+            document.getElementById('search-input').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredStudents = students.filter(student =>
+                    student.name.toLowerCase().includes(searchTerm) ||
+                    student.school.toLowerCase().includes(searchTerm) ||
+                    student.major.toLowerCase().includes(searchTerm) ||
+                    getPinyinInitials(student.name).toLowerCase().includes(searchTerm)
+                );
+                renderStudentList(filteredStudents);
+                document.getElementById('result-count').textContent = `共找到 ${filteredStudents.length} 位同学`;
+            });
+
+            // 绑定标签切换事件（使用事件委托）
+            document.querySelector('.tabs').addEventListener('click', function(e) {
+                const tab = e.target.closest('.tab');
+                if (tab) {
+                    const viewId = tab.getAttribute('data-view');
+                    switchToView(viewId); // 只调用这句
+                }
+            });
+
+            // 返回地图按钮
+            document.getElementById('back-to-map').addEventListener('click', function() {
+                switchToView('china-map');
+                setTimeout(initChinaMap, 0); // 重新初始化地图
+            });
+
+            // 返回主列表按钮
+            document.getElementById('back-to-main').addEventListener('click', function() {
+                switchToView('student-list');
+            });
+
+            // 面包屑导航点击事件
+            document.getElementById('breadcrumb').addEventListener('click', function(e) {
+                if (e.target.classList.contains('breadcrumb-item')) {
+                    const targetView = e.target.getAttribute('data-target');
+                    switchToView(targetView);
+                }
+            });
+        });
+
+        // 切换到指定视图
+        function switchToView(viewId) {
+            // 更新标签状态
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            const tab = document.querySelector(`.tab[data-view="${viewId}"]`);
+            if (tab) {
+                tab.style.display = 'flex';
+                tab.classList.add('active');
+            }
+
+            // 更新视图状态
+            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+
+            // 更新面包屑导航
+            updateBreadcrumb(viewId);
+
+            // 隐藏学校详情标签（当切换到其他视图时）
+            if (viewId !== 'school-detail') {
+                document.getElementById('school-detail-tab').style.display = 'none';
+            }
+
+            // 如果切换到地图，强制resize
+            if (viewId === 'china-map' && myChart) {
+                setTimeout(() => {
+                    myChart.resize();
+                }, 0);
+            }
+        }
+
+        // 更新面包屑导航
+        function updateBreadcrumb(currentView) {
+            const breadcrumb = document.getElementById('breadcrumb');
+            breadcrumb.innerHTML = '';
+
+            // 首页始终显示
+            const homeItem = document.createElement('div');
+            homeItem.className = 'breadcrumb-item';
+            homeItem.setAttribute('data-target', 'student-list');
+            homeItem.innerHTML = '<i class="fas fa-home"></i> 首页';
+            breadcrumb.appendChild(homeItem);
+
+            // 添加当前视图
+            if (currentView === 'china-map') {
+                breadcrumb.appendChild(createDivider());
+
+                const mapItem = document.createElement('div');
+                mapItem.className = 'breadcrumb-item';
+                mapItem.textContent = '中国地图';
+                breadcrumb.appendChild(mapItem);
+            } else if (currentView === 'school-detail') {
+                breadcrumb.appendChild(createDivider());
+
+                const mapItem = document.createElement('div');
+                mapItem.className = 'breadcrumb-item';
+                mapItem.setAttribute('data-target', 'china-map');
+                mapItem.textContent = '中国地图';
+                breadcrumb.appendChild(mapItem);
+
+                breadcrumb.appendChild(createDivider());
+
+                const schoolItem = document.createElement('div');
+                schoolItem.className = 'breadcrumb-item';
+                schoolItem.textContent = '学校详情';
+                breadcrumb.appendChild(schoolItem);
+            }
+        }
+
+        // 创建分隔符
+        function createDivider() {
+            const divider = document.createElement('div');
+            divider.className = 'breadcrumb-divider';
+            divider.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            return divider;
+        }
+
+        // 渲染学生列表
+        function renderStudentList(students) {
+            const container = document.getElementById('student-list-container');
+            container.innerHTML = '';
+
+            if (students.length === 0) {
+                container.innerHTML = '<div class="no-result">没有找到匹配的同学</div>';
+                return;
+            }
+
+            students.forEach(student => {
+                const card = document.createElement('div');
+                card.className = 'student-card';
+                card.innerHTML = `
+                    <div class="student-name">${student.name}</div>
+                    <div class="student-school">${student.school}</div>
+                    <div class="student-major">${student.major}</div>
+                    <div class="student-location">
+                        <i class="fas fa-map-marker-alt"></i> ${student.location}
+                    </div>
+                `;
+
+                // 点击卡片显示学校详情
+                card.addEventListener('click', function() {
+                    showSchoolDetail(student.school);
+                });
+
+                container.appendChild(card);
+            });
+        }
+
+        // 初始化中国地图
+        let myChart = null;
+
+        function initChinaMap() {
+            const chartDom = document.getElementById('map-container');
+            if (myChart) {
+                myChart.dispose();
+            }
+            myChart = echarts.init(chartDom);
+
+            // 按省份统计学生人数
+            const provinceData = {};
+            students.forEach(student => {
+                const province = student.location;
+                provinceData[province] = (provinceData[province] || 0) + 1;
+            });
+
+            // 转换为地图数据
+            const mapData = Object.keys(provinceData).map(province => {
+                return {
+                    name: province,
+                    value: provinceData[province]
+                };
+            });
+
+            // 配置地图选项
+            const option = {
+                title: {
+                    text: '高校录取分布图',
+                    subtext: '按省份统计录取人数',
+                    left: 'center',
+                    top: 10,
+                    textStyle: {
+                        color: '#333',
+                        fontSize: 18
+                    }
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        return `${params.name}<br/>录取人数: ${params.value || 0}人`;
+                    }
+                },
+                visualMap: {
+                    min: 0,
+                    max: 10,
+                    text: ['多', '少'],
+                    realtime: false,
+                    calculable: true,
+                    inRange: {
+                        color: ['#e6f7ff', '#bae7ff', '#91d5ff', '#69c0ff', '#40a9ff']
+                    },
+                    textStyle: {
+                        color: '#333'
+                    }
+                },
+                series: [{
+                    name: '录取人数',
+                    type: 'map',
+                    map: 'china',
+                    roam: true,
+                    label: {
+                        show: true,
+                        fontSize: 10
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: 12
+                        },
+                        itemStyle: {
+                            areaColor: '#ff7bac'
+                        }
+                    },
+                    data: mapData
+                }]
+            };
+
+            myChart.setOption(option);
+
+            // 点击省份事件
+            myChart.on('click', function(params) {
+                const province = params.name;
+                const studentsInProvince = students.filter(student => student.location === province);
+
+                // 显示省份内学校
+                showProvinceSchools(province, studentsInProvince);
+            });
+        }
+
+        // 显示省份内的学校
+        function showProvinceSchools(province, students) {
+            // 按学校分组
+            const schools = {};
+            students.forEach(student => {
+                if (!schools[student.school]) {
+                    schools[student.school] = [];
+                }
+                schools[student.school].push(student);
+            });
+
+            // 渲染学校详情
+            const container = document.getElementById('school-detail-container');
+            container.innerHTML = `
+                <div class="school-header">
+                    <div class="school-icon">
+                        <i class="fas fa-university"></i>
+                    </div>
+                    <div class="school-name">${province}高校<span class="student-count">${students.length}人</span></div>
+                </div>
+                <div class="school-info">
+            `;
+
+            // 为每个学校创建卡片
+            Object.keys(schools).forEach(schoolName => {
+                        const schoolStudents = schools[schoolName];
+                        container.innerHTML += `
+        <div class="info-card">
+            <h3><i class="fas fa-school"></i> ${schoolName} <span class="student-count">${schoolStudents.length}人</span></h3>
+            <ul>
+                ${schoolStudents.map(student => `<li><i class="fas fa-user-graduate"></i> ${student.name}：${student.major}</li>`).join('')}
+            </ul>
+            <button class="website-btn detail-btn" data-school="${schoolName}">
+                <i class="fas fa-external-link-alt"></i> 查看学校详情
+            </button>
+        </div>
+    `;
+});
+
+            container.innerHTML += `</div>`;
+            
+            // 只给“查看学校详情”按钮绑定事件
+            document.querySelectorAll('.detail-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const schoolName = this.getAttribute('data-school');
+                    showSchoolDetail(schoolName);
+                });
+            });
+            
+            // 切换到学校详情视图
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('school-detail-tab').style.display = 'flex';
+            document.getElementById('school-detail-tab').classList.add('active');
+            
+            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+            document.getElementById('school-detail').classList.add('active');
+            
+            // 更新面包屑导航
+            updateBreadcrumb('school-detail');
+        }
+
+        // 显示学校详情
+        function showSchoolDetail(schoolName) {
+            const detail = schoolDetails[schoolName] || schoolDetails['default'];
+            
+            // 获取该校的学生
+            const schoolStudents = students.filter(student => student.school === schoolName);
+            
+            const container = document.getElementById('school-detail-container');
+            container.innerHTML = `
+                <div class="school-header">
+                    <div class="school-icon">
+                        <i class="fas fa-university"></i>
+                    </div>
+                    <div class="school-name">${schoolName} <span class="student-count">${schoolStudents.length}人</span></div>
+                </div>
+                
+                <div class="school-info">
+                    <div class="info-card">
+                        <h3><i class="fas fa-info-circle"></i> 学校简介</h3>
+                        <p>${detail.description}</p>
+                    </div>
+                    
+                    <div class="info-card">
+                        <h3><i class="fas fa-star"></i> 特色专业</h3>
+                        <ul>
+                            ${detail.features.map(feature => `<li><i class="fas fa-check"></i> ${feature}</li>`).join('')}
+                        </ul>
+                    </div>
+                    
+                    <div class="info-card">
+                        <h3><i class="fas fa-map-marked-alt"></i> 校区位置</h3>
+                        <p><i class="fas fa-location-dot"></i> ${detail.campus}</p>
+                        ${detail.website && detail.website !== "#" ? `
+    <a href="${detail.website}" target="_blank" class="website-btn">
+        <i class="fas fa-external-link-alt"></i> 访问学校官网
+    </a>
+` : ''}
+                    </div>
+                    
+                    <div class="info-card">
+                        <h3><i class="fas fa-user-graduate"></i> 录取同学</h3>
+                        <ul>
+                            ${schoolStudents.map(student => `<li><i class="fas fa-user"></i> ${student.name}：${student.major}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            // 切换到学校详情视图
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('school-detail-tab').style.display = 'flex';
+            document.getElementById('school-detail-tab').classList.add('active');
+            
+            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+            document.getElementById('school-detail').classList.add('active');
+            
+            // 更新面包屑导航
+            updateBreadcrumb('school-detail');
+        }
+    </script>
+</body>
+
+</html>
